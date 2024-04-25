@@ -1,18 +1,24 @@
-users: list = [
+import folium
+import requests
+from bs4 import BeautifulSoup
 
-    {"name": "Julia", "surname": "Gotowiec", "posts": 1500, },
-    {"name": "Hubert", "surname": "Sybilski", "posts": 123456, },
-    {"name": "Adrian", "surname": "Dobrzan", "posts": 2137, },
-    {"name": "Bartek", "surname": "Wyrzychowski", "posts": 300, }
-]
-
-def update_user(users: list):
-    imie =input("Wprowadź imie uzytkownika, ktorego dane chccesz zmienic: ")
+from models.data_source import users
+def full_map(users:str)->None:
+    lista_wspolrzednych = []
+    map = folium.Map(location=[52, 21], zoom_start=8)
     for user in users:
-        if user["name"] == imie:
-            user["name"] = input("Podaj nowe imie: ")
-            user["surname"] = input("Podaj nowe nazwisko: ")
-            user["posts"] = int(input("Podaj nowa liczbe postow: "))
+        url: str = f'https://pl.wikipedia.org/wiki/{user['location']}'
+        response = requests.get(url)
+        # print(response.text)
+        response_html = BeautifulSoup(response.text, 'html.parser')
+        latitude = response_html.select('.latitude')[1].text.replace(",",".")
+        longitude = response_html.select('.longitude')[1].text.replace(",",".")
+        lista_wspolrzednych.append([latitude, longitude])
+        print(latitude)
+        print(longitude)
+    for wspolrzedne in lista_wspolrzednych:
+        folium.Marker(location=wspolrzedne).add_to(map)
 
-update_user(users)
-print(users)
+    map.save(f'./common_map.html')
+
+full_map(users)
